@@ -10,10 +10,19 @@
         </el-col>
       </el-row>
     </template>
-    <template v-else>
+    <template v-else>      
       <h1>You need to supply github login to see resume</h1>
-      <el-input v-model="enteredlogin" placeholder="Enter github login" />
-      <el-button type="primary" @click="loadresume">Load</el-button>
+      <el-row>
+      <el-col :offset="7" :span="7">
+        <el-input 
+        v-model="enteredlogin"
+        placeholder="Enter github login, try 'demosglok' for demo" 
+        />
+      </el-col>
+      <el-col :span="5">
+        <el-button type="primary" @click="loadresume">Load</el-button>
+      </el-col>
+      </el-row>
     </template>
   </div>
 </template>

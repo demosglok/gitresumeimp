@@ -11,13 +11,18 @@ export default {
           }
         })
         .then(res => res.json())
-        .then(content => {
-          const decoded = atob(content.content)
-          try {
-            return JSON.parse(decoded);
-          } catch (ex) {
-            console.log('error', ex.message, decoded);
-            return {error: `Failed to parse resume ${ex.message}`};
+        .then(resume => {
+          console.log('content',resume.content);
+          if(resume.content) {
+            const decoded = atob(resume.content)
+            try {
+              return JSON.parse(decoded);
+            } catch (ex) {
+              console.log('error', ex.message, decoded);
+              return {error: `Failed to parse resume ${ex.message}`};
+            }
+          } else {
+            return {error: 'NO RESUME: empty or unexistent resume.json file '};
           }
         })
         .catch(err => ({error: `Failed to load resume ${err.message}`}));
