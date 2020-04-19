@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
+import Edit from '@/views/Edit';
+import Resume from '@/views/Resume';
 
 Vue.use(VueRouter)
 
@@ -17,7 +19,23 @@ Vue.use(VueRouter)
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
-  }
+  },
+  {
+    path: '/edit',
+    name: 'Edit',
+    component: Edit
+  },
+  {
+    path: '/resume',
+    name: 'Resume',
+    component: Resume
+  },
+  {
+    path: '/:githublogin',
+    name: 'Resume',
+    component: Resume,
+    props: true
+  },
 ]
 
 const router = new VueRouter({
