@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <el-container>
-      <el-header height="50px"><main-menu /></el-header>
+      <el-header height="61px"><main-menu /></el-header>
       <el-main> <router-view /></el-main>
       <el-footer height="50px">(c) Dmytro Selin</el-footer>
     </el-container>
@@ -28,6 +28,9 @@ export default {
   text-align: center;
   color: #2c3e50;
 }
+body {
+  margin: 0;
+}
 </style>
 <style scoped>
   .el-container {
@@ -35,5 +38,12 @@ export default {
   }
   .el-main {
     min-height: calc(100% - 100px - 40px);
+    padding: 0;
+  }
+  .el-header {
+    position: fixed;
+    width: 100%;
+    background-color: #242c34;
+    z-index: 10;
   }
 </style>
