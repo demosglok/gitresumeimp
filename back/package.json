@@ -1,0 +1,27 @@
+{
+  "name": "gitresume_back",
+  "version": "1.0.0",
+  "description": "backend for gitresume project for HR hackathon",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "resume",
+    "git",
+    "open",
+    "source"
+  ],
+  "author": "Dmytro Selin",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.0",
+    "body-parser": "^1.19.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "passport": "^0.4.1",
+    "passport-github2": "^0.1.12"
+  }
+}
