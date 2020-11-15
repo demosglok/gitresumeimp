@@ -16,6 +16,9 @@ export default {
   name: 'app',
   components: {
     MainMenu
+  },
+  mounted() {
+    this.$store.dispatch('loadUser');
   }
 }
 </script>

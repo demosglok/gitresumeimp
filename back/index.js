@@ -5,9 +5,10 @@ var bodyParser = require('body-parser');
 const passport = require('passport');
 const GitHubStrategy = require('passport-github2').Strategy;
 
-const port = process.env.PORT || 8080;
-
 require('dotenv').config();
+
+const port = process.env.PORT || 8081;
+console.log('env port', process.env.PORT);
 
 const GITHUB_API = 'https://api.github.com';
 
@@ -50,7 +51,53 @@ app.get('/auth/github/callback',
     // Successful authentication, redirect home.
     res.redirect('/');
   });
-app.get('/', async (req, res) => {
+app.get('/', (req, res) => res.redirect('http://localhost:8080'));
+app.get('/getuser', (req, res) => {
+  const user = req.session && req.session.passport && req.session.passport.user;
+  if(user) {
+    res.json(user);
+  } else {
+    res.json({error: 'no_user', message: 'User is not logged in'})
+  }
+})
+app.get('/getresume', async (req, res) => {
+  const user = req.session && req.session.passport && req.session.passport.user;
+  if(user) {
+    try {
+      const response = await axios.get(`${GITHUB_API}/repos/${user.username}/${user.username}`, {
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: `token ${user.token}`
+        }
+      });
+      console.log('got resume repo', response.data);
+
+      const resumes = await Promise.all([
+        axios.get(`${GITHUB_API}/repos/${user.username}/${user.username}/contents/README.md`,{
+          headers: {
+            Accept: 'application/vnd.github.v3+json',
+            Authorization: `token ${user.token}`
+          }
+        }).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
+        axios.get(`${GITHUB_API}/repos/${user.username}/${user.username}/contents/resume.json`,{
+          headers: {
+            Accept: 'application/vnd.github.v3+json',
+            Authorization: `token ${user.token}`
+          }
+        }).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
+      ]);
+      console.log('got resumes', resumes);
+      res.json(resumes);
+
+    } catch(ex) {
+      console.log('error getting resume', ex.message, ex.response && ex.response.data);
+      res.json({error: ex.message, data: ex.response && ex.response.data});
+    }
+  } else {
+    res.json({error: 'no_user', message: 'User is not logged in'});
+  }
+});
+app.get('/createresume', async (req, res) => {
     const user = req.session && req.session.passport && req.session.passport.user;
     console.log('req', user);
     let error = null;

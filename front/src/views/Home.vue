@@ -96,6 +96,11 @@ export default {
     start_click() {
       window.location = '/auth/github';
     }
+  },
+  mounted() {
+    if(this.$store.state.user) {
+      this.$router.push('/resume');
+    }
   }
 }
 </script>
