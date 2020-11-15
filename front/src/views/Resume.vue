@@ -26,7 +26,7 @@ export default {
   },
   computed: {
     resume() {
-      return this.$store.state.resume;
+      return this.$store.state.resume || {};
     }
   },
   components: {

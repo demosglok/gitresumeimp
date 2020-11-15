@@ -21,7 +21,7 @@ export default new Vuex.Store({
     loadUser({commit}) {
 //      fetch(`${config.BACKEND_URL}/getuser`,{credentials: "same-origin"}).then(res => res.json()).then(user => {
       console.log('getting user');
-      http.get('/getuser').then((user) => {
+      return http.get('/getuser').then((user) => {
         console.log('got user', user);
         if(user && !user.error) {
           commit('setUser', user);
@@ -32,6 +32,7 @@ export default new Vuex.Store({
       }).catch(ex => {
         console.log('error loading user', ex.message);
         commit('setUser', null);
+        return null;
       })
     },
     loadResume({commit}) {
