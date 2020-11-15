@@ -4,7 +4,10 @@ const axios = require('axios');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 const passport = require('passport');
+const fileUpload = require('express-fileupload');
 const GitHubStrategy = require('passport-github2').Strategy;
+const FormData = require('form-data');
+const fs = require('fs');
 
 require('dotenv').config();
 
@@ -17,6 +20,7 @@ const app = express();
 app.use(cors({ credentials: true, origin: true}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(fileUpload());
 app.use(session({ secret: 'some secret salt azaza', resave: true, saveUninitialized: true, cookie: { maxAge: 1209600000 } }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -107,8 +111,8 @@ app.get('/getresume', async (req, res) => {
 
 function prepareReadme(resume) {
   const technologiesStr = resume.technologies && resume.technologies.join(', ');
-  const experienceStr = resume.experience && resume.experience.map(e => `###${e.company}\n\n${e.start_date} - ${e.end_date}\n\n**${e.position}**\n\n${e.description||''}\n\n`).join("\n----\n");
-  const educationStr = resume.education && resume.education.map(e => `###${e.school}\n\n${e.start_date} - ${e.end_date}\n\n**${e.degree}**\n\n${e.description||''}\n\n`).join("\n----\n")
+  const experienceStr = resume.experience && resume.experience.map(e => `###${e.company}\n\n${e.start_date} - ${e.end_date}\n\n**${e.position||''}**\n\n${e.description||''}\n\n`).join("\n----\n");
+  const educationStr = resume.education && resume.education.map(e => `###${e.school}\n\n${e.start_date} - ${e.end_date}\n\n**${e.degree||''}**\n\n${e.description||''}\n\n`).join("\n----\n")
   return `## ${resume.name||''}\n
 ### ${resume.title||''}\n
 ${resume.description||''}\n
@@ -193,6 +197,51 @@ app.post('/saveresume', async (req, res) => {
     } else {
       res.json({error});
     }
+})
+app.post('/parseresume', (req, res) => {
+  const user = req.user;
+  const API_TOKEN = process.env.RESUME_API_TOKEN;
+  if(!req.files) {
+    res.json({error: 'no_file', message: 'No file provided'});
+  } else {
+    const file = req.files.file;
+    const formdata = new FormData();
+    file.mv('./tmpresume.pdf',(err) => {
+      formdata.append('file', fs.createReadStream('./tmpresume.pdf'));
+      axios.post('https://staging.opening.io/api/v4/process-resume', formdata, {
+          headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${API_TOKEN}`,
+              //base64: 'true',
+              "Content-Type": 'multipart/form-data; boundary=' + formdata.getBoundary()
+          }
+      }).then(parsingResult => {
+          const data = parsingResult.data && parsingResult.data.result && parsingResult.data.result.data;
+          if(data) {
+              const {address, candidate_name, education, emails, experience, extra_entities, payscales, skills, social_profiles, topics} = data;
+              const resume = {
+                name: candidate_name,
+                title: extra_entities.position[0].entity,
+                description: '',
+                level: null,
+                technologies: skills,
+                experience: experience.map(e => ({company: e.company, position: e.titile, start_date: e.from, end_date: e.to, description: e.description})),
+                education: education.map(e => ({school: e.name, degree: e.degree, start_date: e.from, end_date: e.to, description: e.context.skills.join(',')}))
+              };
+
+              res.json({success: true, resume});
+          } else {
+              console.log('no data', res.data.result);
+              res.json({error: 'no_data', message: 'No data provied'});
+          }
+
+      }).catch(err => {
+        console.log('err', err, err.message);
+        res.json({error: err.message});
+      });
+
+    });
+  }
 })
 
 app.listen(port, () => {

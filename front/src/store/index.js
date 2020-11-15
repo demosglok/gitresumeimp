@@ -43,7 +43,6 @@ export default new Vuex.Store({
        return http.get('/getresume').then(resumes => {
         if(resumes && !resumes.error) {
           const [jsonResume, readmeResume] = resumes;
-          console.log('resumes', readmeResume, jsonResume)
           if(jsonResume && !jsonResume.error) {
             commit('setResume', jsonResume);
           }

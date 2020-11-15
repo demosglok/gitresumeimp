@@ -18,7 +18,7 @@
     </el-row>
     <el-row>
       <el-col :span="8">Description/Achievements</el-col>
-      <el-col :span="16"><el-input type="textarea" v-model="experience.achievement" @input="handleInput"/></el-col>
+      <el-col :span="16"><el-input type="textarea" v-model="experience.description" @input="handleInput"/></el-col>
     </el-row>
 
   </div>

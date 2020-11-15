@@ -2,7 +2,19 @@
   <div class="wrapper">
     <h1>Edit your resume</h1>
     <div class="resume_editor">
-      <el-row><el-col><el-button type="primary">Import existing from file</el-button></el-col></el-row>
+      <el-row><el-col>
+      <el-upload
+        ref="uploader"
+        class="custom-uploader"
+        name="file"
+        :action="uploadUrl"
+        :with-credentials="true"
+        :on-success="onUploadedFile"
+      >
+        <el-button  type="primary"> <i class="el-icon-upload"></i>Import Resume From File</el-button>
+        <div slot="tip" class="el-upload__tip">docx/pdf files with a size less than 500kb</div>
+      </el-upload>
+      </el-col></el-row>
       <el-row>
         <el-col :span="6"><b>Name</b></el-col>
         <el-col :span="18"><el-input v-model="name"/></el-col>
@@ -55,6 +67,7 @@
 <script>
 import ExperienceEdit from '@/components/ExperienceEdit';
 import EducationEdit from '@/components/EducationEdit';
+import config from '@/config';
 
 export default {
   name: 'Edit',
@@ -74,6 +87,14 @@ export default {
   components: {
     ExperienceEdit,
     EducationEdit
+  },
+  computed: {
+    uploadUrl() {
+      return `${config.BACKEND_URL}/parseresume`;
+    },
+    currentResume() {
+      return this.$store.state.resume;
+    }
   },
   methods: {
     addTechnology() {
@@ -115,8 +136,23 @@ export default {
           this.$message({type: 'error', message: saveResult.error});
         }
       })
+    },
+    onUploadedFile(response) {
+      console.log('uploaded', response);
+      if(response.success) {
+        // assign response to current resume
+        this.$store.commit('setResume', response.resume);
+        this.$refs.uploader.clearFiles();
+      } else {
+        this.$notify.error({
+          title: "Error",
+          message: response.error || "Error while uploading and processing"
+        });
+      }
+
     }
   },
+
   mounted() {
     const resume = this.$store.state.resume;
     if(resume) {
@@ -132,6 +168,29 @@ export default {
       }
       if(resume.education) {
         resume.education.forEach(e => this.education.push({...e}));
+      }
+    }
+  },
+  watch: {
+    currentResume(resume) {
+      if(resume) {
+        this.name = resume.name;
+        this.title = resume.title;
+        this.description = resume.description;
+        this.level = resume.level;
+        if(resume.technologies) {
+          this.technologies.splice(0,this.technologies.length)
+          resume.technologies.forEach(t => this.technologies.push(t));
+        }
+        if(resume.experience) {
+          console.log('updating experience', resume.experience);
+          this.experience.splice(0,this.experience.length)
+          resume.experience.forEach(e => this.experience.push({...e}));
+        }
+        if(resume.education) {
+          this.education.splice(0,this.education.length)
+          resume.education.forEach(e => this.education.push({...e}));
+        }
       }
     }
   }
@@ -156,4 +215,5 @@ export default {
     margin: auto;
     text-align: center;
   }
+
 </style>
