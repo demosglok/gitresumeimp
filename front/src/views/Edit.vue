@@ -35,7 +35,7 @@
       <el-row>
         <el-col :span="6"><b>Experience</b></el-col>
         <el-col :span="18">
-          <div v-for="item in experience" :key="item.company"><ExperienceEdit v-model="experience[idx]"/></div>
+          <div v-for="(item, idx) in experience" :key="`experience_${idx}`"><ExperienceEdit v-model="experience[idx]"/></div>
           <el-button class="add_more" @click="addExperience">Add more</el-button>
 
         </el-col>
@@ -43,7 +43,7 @@
       <el-row>
         <el-col :span="6"><b>Education</b></el-col>
         <el-col :span="18">
-          <div v-for="item in experience" :key="item.company"><EducationEdit v-model="experience[idx]"/></div>
+          <div v-for="(item, idx) in education" :key="`education_${idx}`"><EducationEdit v-model="education[idx]"/></div>
           <el-button class="add_more" @click="addEducation">Add more</el-button>
         </el-col>
       </el-row>
@@ -96,6 +96,7 @@ export default {
         experience: this.experience,
         education: this.education
       };
+      console.log(JSON.parse(JSON.stringify(resume)));
       console.log('save resume', resume);
     }
   },
