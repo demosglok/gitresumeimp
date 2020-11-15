@@ -96,12 +96,44 @@ export default {
         experience: this.experience,
         education: this.education
       };
-      console.log(JSON.parse(JSON.stringify(resume)));
-      console.log('save resume', resume);
+      let saveResumePromise = null;
+      if(this.$store.state.readme_resume) {
+        saveResumePromise = this.$confirm('You have your README.md file in your account, do you want to overwrite it as well or save just JSON resume?', 'Warning', {
+          confirmButtonText: 'Overwrite README.md',
+          cancelButtonText: 'Save only resume.json',
+          type: 'warning'
+        })
+        .then(() => this.$store.dispatch('saveResume', {resume, overwrite: true}))
+        .catch(() => this.$store.dispatch('saveResume', {resume, overwrite: false}));
+      } else {
+        saveResumePromise = this.$store.dispatch('saveResume', {resume, overwrite: true});
+      }
+      saveResumePromise.then(saveResult => {
+        if(!saveResult.error) {
+          this.$message({type: 'success', message: 'Resume saved successfully, check your github account'});
+        } else {
+          this.$message({type: 'error', message: saveResult.error});
+        }
+      })
     }
   },
   mounted() {
-
+    const resume = this.$store.state.resume;
+    if(resume) {
+      this.name = resume.name;
+      this.title = resume.title;
+      this.description = resume.description;
+      this.level = resume.level;
+      if(resume.technologies) {
+        resume.technologies.forEach(t => this.technologies.push(t));
+      }
+      if(resume.experience) {
+        resume.experience.forEach(e => this.experience.push({...e}));
+      }
+      if(resume.education) {
+        resume.education.forEach(e => this.education.push({...e}));
+      }
+    }
   }
 }
 </script>

@@ -19,7 +19,7 @@ export default new Vuex.Store({
     },
     setUser(state, user) {
       state.user = user;
-    }
+    },
   },
   actions: {
     loadUser({commit}) {
@@ -42,7 +42,7 @@ export default new Vuex.Store({
     loadResume({commit}) {
        return http.get('/getresume').then(resumes => {
         if(resumes && !resumes.error) {
-          const [readmeResume, jsonResume] = resumes;
+          const [jsonResume, readmeResume] = resumes;
           console.log('resumes', readmeResume, jsonResume)
           if(jsonResume && !jsonResume.error) {
             commit('setResume', jsonResume);
@@ -58,8 +58,14 @@ export default new Vuex.Store({
         commit('setUser', null);
       })
     },
-    saveResume({state}) {
-      console.log('saving resumt', state.resume);
+    saveResume({commit}, {resume, overwrite}) {
+      console.log('saving resume', resume, overwrite);
+      commit('setResume', resume);
+      return http.post('/saveresume', {resume, overwrite}).then(result => result)
+      .catch(ex => {
+        console.log('error saving resume', ex.message)
+        return {error: ex.message};
+      });
     }
   },
   modules: {

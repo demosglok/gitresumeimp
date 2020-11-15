@@ -10,11 +10,11 @@
     </el-row>
     <el-row>
       <el-col :span="8">Start Date</el-col>
-      <el-col :span="16"><el-date-picker v-model="experience.start_date" @input="handleInput"/></el-col>
+      <el-col :span="16"><el-date-picker v-model="experience.start_date" @input="handleInput" format="yyyy-MM-dd" value-format="yyyy-MM-dd" /></el-col>
     </el-row>
     <el-row>
       <el-col :span="8">End Date</el-col>
-      <el-col :span="16"><el-date-picker v-model="experience.end_date" @input="handleInput"/></el-col>
+      <el-col :span="16"><el-date-picker v-model="experience.end_date" @input="handleInput" format="yyyy-MM-dd" value-format="yyyy-MM-dd" /></el-col>
     </el-row>
     <el-row>
       <el-col :span="8">Description/Achievements</el-col>

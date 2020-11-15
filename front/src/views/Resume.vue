@@ -1,7 +1,6 @@
 <template>
   <div class="wrapper">
       <template v-if="resume">
-      test
         <el-row>
           <el-col :span="12">
             <resume-raw :resume="resume" />
