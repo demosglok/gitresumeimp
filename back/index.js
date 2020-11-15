@@ -9,6 +9,8 @@ const port = process.env.PORT || 8080;
 
 require('dotenv').config();
 
+const GITHUB_API = 'https://api.github.com';
+
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -30,7 +32,7 @@ passport.deserializeUser(function(obj, done) {
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: `http://${process.env.SERVER_URL}/auth/github/callback`
+    callbackURL: `${process.env.SERVER_URL}/auth/github/callback`
   },
   function(accessToken, refreshToken, profile, done) {
       const userdata = {id: profile.id, nodeId: profile.nodeId, displayName: profile.displayName, username: profile.username, token: accessToken};
@@ -48,10 +50,61 @@ app.get('/auth/github/callback',
     // Successful authentication, redirect home.
     res.redirect('/');
   });
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
     const user = req.session && req.session.passport && req.session.passport.user;
     console.log('req', user);
-    res.json({msg: 'got it', user});
+    let error = null;
+    try {
+    const response = await axios.post(`${GITHUB_API}/user/repos`,
+      {
+        name: user.username,
+        description: 'testing resume repo',
+        private: false
+      },
+      {
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: `token ${user.token}`
+        }
+      });
+
+       console.log(' creation result', response.data);
+
+    } catch(ex) {
+        console.log('error', ex.message, ex.response && ex.response.data);
+        error = {message: ex.message, data: ex.response && ex.response.data};
+    }
+    const alreadyExists = error && error.data && error.data.errors && error.data.errors.some(err => err.message == 'name already exists on this account');
+    if(alreadyExists) {
+      console.log('repo already exists');
+    }
+    if(!error || alreadyExists) {
+      try {
+        error = null;
+        const filecreation = await axios.put(`${GITHUB_API}/repos/${user.username}/${user.username}/contents/README.md`,
+          {
+            message: 'testing creation of readme',
+            content: Buffer.from("### test readme\n\n here will be *resume*\n\n").toString('base64')
+          },
+          {
+            headers: {
+              Accept: 'application/vnd.github.v3+json',
+              Authorization: `token ${user.token}`
+            }
+          });
+
+        console.log('file creation result ', filecreation);
+
+      } catch (ex) {
+          console.log('error', ex.message, ex.response && ex.response.data);
+          error = {message: ex.message, data: ex.response && ex.response.data};
+      }
+    }
+    if(!error) {
+        res.json({msg: 'got it', user});
+    } else {
+      res.json({error});
+    }
 })
 
 app.listen(port, () => {
