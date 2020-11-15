@@ -7,11 +7,15 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     user: null,
-    resume: null
+    resume: null,
+    readme_resume: null
   },
   mutations: {
     setResume(state, resume) {
       state.resume = resume;
+    },
+    setReadmeResume(state, resume) {
+      state.readme_resume = resume;
     },
     setUser(state, user) {
       state.user = user;
@@ -36,13 +40,19 @@ export default new Vuex.Store({
       })
     },
     loadResume({commit}) {
-       http.get('/getresume').then(resumes => {
+       return http.get('/getresume').then(resumes => {
         if(resumes && !resumes.error) {
           const [readmeResume, jsonResume] = resumes;
           console.log('resumes', readmeResume, jsonResume)
-          if(jsonResume && !jsonResume.error)
-          commit('setResume', jsonResume);
+          if(jsonResume && !jsonResume.error) {
+            commit('setResume', jsonResume);
+          }
+          if(readmeResume && !readmeResume.error) {
+            commit('setReadmeResume', readmeResume);
+          }
+          return !jsonResume.error ? jsonResume : null;
         }
+        return null;
       }).catch(ex => {
         console.log('error loading user', ex.message);
         commit('setUser', null);

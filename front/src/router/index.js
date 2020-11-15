@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Edit from '@/views/Edit';
 import Resume from '@/views/Resume';
+import ViewByAccount from '@/views/ViewByAccount';
 
 Vue.use(VueRouter)
 
@@ -30,6 +31,12 @@ Vue.use(VueRouter)
     name: 'Edit',
     component: Edit
   },
+    {
+    path: '/viewbyaccount',
+    name: 'ViewByAccount',
+    component: ViewByAccount
+  },
+
   {
     path: '/resume',
     name: 'Resume',
