@@ -18,7 +18,13 @@ export default {
     MainMenu
   },
   mounted() {
-    this.$store.dispatch('loadUser');
+    this.$store.dispatch('loadUser').then(user => {
+      console.log('App.vue loaded user', user);
+      if(user) {
+        console.log('redirecting to resume');
+        this.$router.push('/resume');
+      }
+    });
   }
 }
 </script>

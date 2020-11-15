@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
-
+import http from '@/http';
 
 Vue.use(Vuex)
 
@@ -19,10 +19,15 @@ export default new Vuex.Store({
   },
   actions: {
     loadUser({commit}) {
-      fetch('/getuser').then(res => res.json()).then(user => {
-        console.log('get user', user);
+//      fetch(`${config.BACKEND_URL}/getuser`,{credentials: "same-origin"}).then(res => res.json()).then(user => {
+      console.log('getting user');
+      http.get('/getuser').then((user) => {
+        console.log('got user', user);
         if(user && !user.error) {
           commit('setUser', user);
+          return user;
+        } else {
+          return null;
         }
       }).catch(ex => {
         console.log('error loading user', ex.message);
@@ -30,7 +35,7 @@ export default new Vuex.Store({
       })
     },
     loadResume({commit}) {
-       fetch('/getresume').then(res => res.json()).then(resumes => {
+       http.get('/getresume').then(resumes => {
         if(resumes && !resumes.error) {
           const [readmeResume, jsonResume] = resumes;
           console.log('resumes', readmeResume, jsonResume)

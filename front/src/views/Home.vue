@@ -89,12 +89,13 @@
 
 <script>
 // @ is an alias to /src
+import config from '@/config';
 
 export default {
   name: 'Home',
   methods: {
     start_click() {
-      window.location = '/auth/github';
+      window.location = `${config.BACKEND_URL}/auth/github`;
     }
   },
   mounted() {

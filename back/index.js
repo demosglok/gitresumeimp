@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const axios = require('axios');
 var session = require('express-session');
 var bodyParser = require('body-parser');
@@ -13,9 +14,10 @@ console.log('env port', process.env.PORT);
 const GITHUB_API = 'https://api.github.com';
 
 const app = express();
+app.use(cors({ credentials: true, origin: true}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(session({ secret: 'some secret salt azaza', resave: false, saveUninitialized: false }));
+app.use(session({ secret: 'some secret salt azaza', resave: true, saveUninitialized: true, cookie: { maxAge: 1209600000 } }));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(__dirname + '/public'));
@@ -46,16 +48,18 @@ app.get('/auth/github',
   passport.authenticate('github', { scope: [ 'user:email', 'public_repo' ] }));
 
 app.get('/auth/github/callback',
-  passport.authenticate('github', { failureRedirect: '/login' }),
+  passport.authenticate('github', { failureRedirect: 'http://localhost:8080/' }),
   function(req, res) {
     // Successful authentication, redirect home.
     res.redirect('/');
   });
-app.get('/', (req, res) => res.redirect('http://localhost:8080'));
+app.get('/', (req, res) => {
+  res.redirect('http://localhost:8080')
+});
 app.get('/getuser', (req, res) => {
-  const user = req.session && req.session.passport && req.session.passport.user;
-  if(user) {
-    res.json(user);
+  console.log('get user', req.user);
+  if(req.user) {
+    res.json(req.user);
   } else {
     res.json({error: 'no_user', message: 'User is not logged in'})
   }
@@ -78,13 +82,13 @@ app.get('/getresume', async (req, res) => {
             Accept: 'application/vnd.github.v3+json',
             Authorization: `token ${user.token}`
           }
-        }).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
+        }).then(response => response.data).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
         axios.get(`${GITHUB_API}/repos/${user.username}/${user.username}/contents/resume.json`,{
           headers: {
             Accept: 'application/vnd.github.v3+json',
             Authorization: `token ${user.token}`
           }
-        }).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
+        }).then(response => response.data).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
       ]);
       console.log('got resumes', resumes);
       res.json(resumes);
