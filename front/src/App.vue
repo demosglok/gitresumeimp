@@ -60,6 +60,5 @@ body {
   .el-footer {
     font-size: 12px;
     line-height: 30px;
-    background-color: #f7f7f7;
   }
 </style>
