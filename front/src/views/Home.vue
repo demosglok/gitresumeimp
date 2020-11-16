@@ -12,7 +12,7 @@
         <!-- <div class="know_more"><a href="#how_it_works">How does it work ⇩</a></div> -->
         <div class="know_more">
           <el-link href="#how_it_works" class="know_more">How does it work<i class="el-icon-bottom el-icon--right"></i></el-link>
-        </div>        
+        </div>
       </div>
     </div>
     <div class="details">
@@ -49,7 +49,9 @@
       <div class="details_section why_to_buy">
         <div class="why_to_buy content">
           <h2>Wait but Why?</h2>
-          <b>Why should I care</b>
+          <el-row>
+          <el-col :span="11">
+          <b>Opensource Resume</b>
           <p>
             We all used to have resume stored somewhere. Most people have one or several options like
             <ul>
@@ -67,6 +69,9 @@
             <a href="https://medium.com/@imrajeshberwal/turning-github-profile-into-resume-with-readme-64215abbe765">https://medium.com/@imrajeshberwal/turning-github-profile-into-resume-with-readme-64215abbe765
             </a>
           </p>
+          </el-col>
+          <el-col :span="11" :offset="2">
+          <b>Robot friendly</b>
           <p>
             One more important thing to consider. Most resumes go through applicant tracking systems or other species of robots, parsing it.
             Software for parsing is very sophisticated and does a great job, but why not to make life of robots easier and make first ROBOT FRIENDLY resume?
@@ -77,9 +82,11 @@
             machine readable format. JSON for now. So that you can paste link to it to any application you file
             and have it easily parsed and eliminate parse errors.
           </p>
+          </el-col>
+          </el-row>
         </div>
       </div>
-      
+
       <div class="details_section what_else">
         <div class="what_else content">
           <h2>What else?</h2>
@@ -250,7 +257,7 @@ export default {
     /* padding: 0 60px; */
   }
 
-  .details_section:not(.how_it_works) {    
+  .details_section:not(.how_it_works) {
     line-height: 1.5;
     width: 100%;
   }
@@ -264,7 +271,7 @@ export default {
   }
 
   .why_to_buy.content,
-  .what_else.content {    
+  .what_else.content {
     max-width: 800px;
     padding: 16px 32px;
     margin: 16px auto;
