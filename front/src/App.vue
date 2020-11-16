@@ -3,7 +3,7 @@
     <el-container>
       <el-header height="61px"><main-menu /></el-header>
       <el-main> <router-view /></el-main>
-      <el-footer height="50px">(c) Dmytro Selin</el-footer>
+      <el-footer height="30px">(c) Dmytro Selin</el-footer>
     </el-container>
   </div>
 </template>
@@ -56,5 +56,9 @@ body {
     width: 100%;
     background-color: #242c34;
     z-index: 10;
+  }
+  .el-footer {
+    font-size: 12px;
+    line-height: 30px;
   }
 </style>
