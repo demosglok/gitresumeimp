@@ -4,7 +4,10 @@ const axios = require('axios');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 const passport = require('passport');
+const fileUpload = require('express-fileupload');
 const GitHubStrategy = require('passport-github2').Strategy;
+const FormData = require('form-data');
+const fs = require('fs');
 
 require('dotenv').config();
 
@@ -17,18 +20,17 @@ const app = express();
 app.use(cors({ credentials: true, origin: true}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(fileUpload());
 app.use(session({ secret: 'some secret salt azaza', resave: true, saveUninitialized: true, cookie: { maxAge: 1209600000 } }));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(__dirname + '/public'));
 
 passport.serializeUser(function(user, done) {
-    console.log('serialize user', user);
   done(null, user);
 });
 
 passport.deserializeUser(function(obj, done) {
-    console.log('desserialize user', obj);
   done(null, obj);
 });
 
@@ -57,15 +59,31 @@ app.get('/', (req, res) => {
   res.redirect('http://localhost:8080')
 });
 app.get('/getuser', (req, res) => {
-  console.log('get user', req.user);
   if(req.user) {
     res.json(req.user);
   } else {
     res.json({error: 'no_user', message: 'User is not logged in'})
   }
 })
+
+function getJsonAndReadmeResumes(username, token) {
+  return Promise.all([
+        axios.get(`${GITHUB_API}/repos/${username}/${username}/contents/resume.json`,{
+          headers: {
+            Accept: 'application/vnd.github.v3+json',
+            Authorization: `token ${token}`
+          }
+        }).then(response => response.data).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
+        axios.get(`${GITHUB_API}/repos/${username}/${username}/contents/README.md`,{
+          headers: {
+            Accept: 'application/vnd.github.v3+json',
+            Authorization: `token ${token}`
+          }
+        }).then(response => response.data).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
+      ]);
+}
 app.get('/getresume', async (req, res) => {
-  const user = req.session && req.session.passport && req.session.passport.user;
+  const user = req.user;
   if(user) {
     try {
       const response = await axios.get(`${GITHUB_API}/repos/${user.username}/${user.username}`, {
@@ -74,23 +92,12 @@ app.get('/getresume', async (req, res) => {
           Authorization: `token ${user.token}`
         }
       });
-      console.log('got resume repo', response.data);
 
-      const resumes = await Promise.all([
-        axios.get(`${GITHUB_API}/repos/${user.username}/${user.username}/contents/README.md`,{
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `token ${user.token}`
-          }
-        }).then(response => response.data).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
-        axios.get(`${GITHUB_API}/repos/${user.username}/${user.username}/contents/resume.json`,{
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `token ${user.token}`
-          }
-        }).then(response => response.data).catch(ex => ({error: ex.message, data: ex.response && ex.response.data})),
-      ]);
-      console.log('got resumes', resumes);
+      const resumes = (await getJsonAndReadmeResumes(user.username, user.token))
+        .map(r => r.content ? Buffer.from(r.content, 'base64').toString() : r);
+      if(!resumes[0].error) {
+        resumes[0] = JSON.parse(resumes[0]);
+      }
       res.json(resumes);
 
     } catch(ex) {
@@ -101,15 +108,34 @@ app.get('/getresume', async (req, res) => {
     res.json({error: 'no_user', message: 'User is not logged in'});
   }
 });
-app.get('/createresume', async (req, res) => {
-    const user = req.session && req.session.passport && req.session.passport.user;
-    console.log('req', user);
+
+function prepareReadme(resume) {
+  const technologiesStr = resume.technologies && resume.technologies.join(', ');
+  const experienceStr = resume.experience && resume.experience.map(e => `###${e.company}\n\n${e.start_date} - ${e.end_date}\n\n**${e.position||''}**\n\n${e.description||''}\n\n`).join("\n----\n");
+  const educationStr = resume.education && resume.education.map(e => `###${e.school}\n\n${e.start_date} - ${e.end_date}\n\n**${e.degree||''}**\n\n${e.description||''}\n\n`).join("\n----\n")
+  return `## ${resume.name||''}\n
+### ${resume.title||''}\n
+${resume.description||''}\n
+Level: ${resume.level||''}\n\n
+Technologies: ${technologiesStr || ''}\n\n
+**Experience**: \n
+${experienceStr || ''}\n\n
+====\n
+**Education**\n\n
+${educationStr||''}\n
+
+JSON: https://github.com/demosglok\n
+   `;
+}
+app.post('/saveresume', async (req, res) => {
+    const {resume, overwrite} = req.body;
+    const user = req.user;
     let error = null;
     try {
     const response = await axios.post(`${GITHUB_API}/user/repos`,
       {
         name: user.username,
-        description: 'testing resume repo',
+        description: 'Repository for showing human readable resume on account and also hold machine-readable resume in json format',
         private: false
       },
       {
@@ -132,10 +158,12 @@ app.get('/createresume', async (req, res) => {
     if(!error || alreadyExists) {
       try {
         error = null;
-        const filecreation = await axios.put(`${GITHUB_API}/repos/${user.username}/${user.username}/contents/README.md`,
+        const [existingJson, existingReadme] = await getJsonAndReadmeResumes(user.username, user.token);
+        const jsonresult = await axios.put(`${GITHUB_API}/repos/${user.username}/${user.username}/contents/resume.json`,
           {
             message: 'testing creation of readme',
-            content: Buffer.from("### test readme\n\n here will be *resume*\n\n").toString('base64')
+            content: Buffer.from(JSON.stringify(resume)).toString('base64'),
+            sha: existingJson.sha ? existingJson.sha : undefined
           },
           {
             headers: {
@@ -144,18 +172,76 @@ app.get('/createresume', async (req, res) => {
             }
           });
 
-        console.log('file creation result ', filecreation);
-
+        if(overwrite) {
+          const readmeContent = prepareReadme(resume);
+          const readmeresult = await axios.put(`${GITHUB_API}/repos/${user.username}/${user.username}/contents/README.md`,
+            {
+              message: 'storing README.md with resume '+Date.now(),
+              content: Buffer.from(readmeContent).toString('base64'),
+              sha: existingReadme.sha ? existingReadme.sha : undefined
+            },
+            {
+              headers: {
+                Accept: 'application/vnd.github.v3+json',
+                Authorization: `token ${user.token}`
+              }
+            });
+        }
       } catch (ex) {
           console.log('error', ex.message, ex.response && ex.response.data);
           error = {message: ex.message, data: ex.response && ex.response.data};
       }
     }
     if(!error) {
-        res.json({msg: 'got it', user});
+        res.json({success: true});
     } else {
       res.json({error});
     }
+})
+app.post('/parseresume', (req, res) => {
+  const user = req.user;
+  const API_TOKEN = process.env.RESUME_API_TOKEN;
+  if(!req.files) {
+    res.json({error: 'no_file', message: 'No file provided'});
+  } else {
+    const file = req.files.file;
+    const formdata = new FormData();
+    file.mv('./tmpresume.pdf',(err) => {
+      formdata.append('file', fs.createReadStream('./tmpresume.pdf'));
+      axios.post('https://staging.opening.io/api/v4/process-resume', formdata, {
+          headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${API_TOKEN}`,
+              //base64: 'true',
+              "Content-Type": 'multipart/form-data; boundary=' + formdata.getBoundary()
+          }
+      }).then(parsingResult => {
+          const data = parsingResult.data && parsingResult.data.result && parsingResult.data.result.data;
+          if(data) {
+              const {address, candidate_name, education, emails, experience, extra_entities, payscales, skills, social_profiles, topics} = data;
+              const resume = {
+                name: candidate_name,
+                title: extra_entities.position[0].entity,
+                description: '',
+                level: null,
+                technologies: skills,
+                experience: experience.map(e => ({company: e.company, position: e.titile, start_date: e.from, end_date: e.to, description: e.description})),
+                education: education.map(e => ({school: e.name, degree: e.degree, start_date: e.from, end_date: e.to, description: e.context.skills.join(',')}))
+              };
+
+              res.json({success: true, resume});
+          } else {
+              console.log('no data', res.data.result);
+              res.json({error: 'no_data', message: 'No data provied'});
+          }
+
+      }).catch(err => {
+        console.log('err', err, err.message);
+        res.json({error: err.message});
+      });
+
+    });
+  }
 })
 
 app.listen(port, () => {

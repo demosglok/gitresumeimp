@@ -10,7 +10,7 @@
   <el-menu-item index="/home">Home</el-menu-item>
   <el-menu-item index="/resume">View Resume</el-menu-item>
   <el-menu-item index="/edit">Edit Resume</el-menu-item>
-  <el-menu-item index="/edit">View Resume by Account</el-menu-item>
+  <el-menu-item index="/viewbyaccount">View Resume by Account</el-menu-item>
   <el-menu-item index="/about">About</el-menu-item>
   </el-menu>
 </template>

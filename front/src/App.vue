@@ -20,9 +20,11 @@ export default {
   mounted() {
     this.$store.dispatch('loadUser').then(user => {
       console.log('App.vue loaded user', user);
-      if(user) {
+      if(user && this.$route.path != '/resume') {
         console.log('redirecting to resume');
         this.$router.push('/resume');
+      } else if (!user && this.$route.path != '/home') {
+        this.$router.push('/home');
       }
     });
   }
